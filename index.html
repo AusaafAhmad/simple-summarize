@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summari</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:          #0e0e0e;
+    --surface:     #161616;
+    --surface2:    #1e1e1e;
+    --border:      #2a2a2a;
+    --border2:     #383838;
+    --text:        #f0ede8;
+    --muted:       #888;
+    --faint:       #444;
+    --accent:      #c8f564;
+    --accent-dim:  #a8d44a;
+    --kept-bg:     #1e3310;
+    --kept-text:   #a8d44a;
+    --drop-bg:     #1a1a1a;
+    --drop-text:   #4a4a4a;
+    --serif:       'Instrument Serif', Georgia, serif;
+    --mono:        'Geist Mono', monospace;
+    --sans:        'Geist', system-ui, sans-serif;
+    --r:           10px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-weight: 300; min-height: 100vh; line-height: 1.6; }
+  .page { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+
+  /* header */
+  .logo { font-family: var(--serif); font-size: 2rem; letter-spacing: -.02em; }
+  .logo em { color: var(--accent); font-style: italic; }
+  .tagline { font-size: .8rem; color: var(--muted); margin-top: .3rem; letter-spacing: .05em; }
+
+  /* card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; margin-top: 2rem; }
+  .card-head { padding: .65rem 1.1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .card-lbl { font-size: .68rem; font-family: var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+  .char-count { font-size: .68rem; font-family: var(--mono); color: var(--faint); }
+
+  textarea {
+    display: block; width: 100%; min-height: 190px; resize: vertical;
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--sans); font-size: .9rem; font-weight: 300;
+    line-height: 1.75; padding: 1.1rem;
+  }
+  textarea::placeholder { color: var(--faint); }
+
+  /* controls */
+  .controls { display: flex; gap: 12px; align-items: flex-end; margin-top: 1.25rem; flex-wrap: wrap; }
+  .ctrl { display: flex; flex-direction: column; gap: 5px; }
+  .ctrl label { font-size: .68rem; font-family: var(--mono); color: var(--muted); letter-spacing: .06em; }
+  .slider-row { display: flex; align-items: center; gap: 8px; }
+  .slider-row input[type=range] {
+    -webkit-appearance: none; width: 140px; height: 3px;
+    background: var(--border2); border-radius: 2px; outline: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 15px; height: 15px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+  }
+  .sval { font-family: var(--mono); font-size: .82rem; color: var(--accent); min-width: 16px; }
+  .sunit { font-size: .7rem; color: var(--muted); font-family: var(--mono); }
+
+  .btn {
+    padding: .58rem 1.5rem; background: var(--accent); color: #0e0e0e;
+    border: none; border-radius: 8px; font-family: var(--sans); font-size: .85rem;
+    font-weight: 500; cursor: pointer; transition: background .15s, transform .1s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent-dim); }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  /* loading */
+  .loading { display: none; align-items: center; gap: 9px; color: var(--muted); font-size: .8rem; font-family: var(--mono); margin-top: 1rem; }
+  .loading.on { display: flex; }
+  .spin { width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* error */
+  .err { display: none; margin-top: 1rem; background: #1a0808; border: 1px solid #4a1515; border-radius: var(--r); padding: .7rem 1rem; font-family: var(--mono); font-size: .8rem; color: #e24b4a; }
+  .err.on { display: block; }
+
+  /* results */
+  .results { display: none; margin-top: 2rem; }
+  .results.on { display: block; }
+
+  /* stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: .85rem 1rem; }
+  .stat-v { font-family: var(--mono); font-size: 1.35rem; font-weight: 500; color: var(--accent); line-height: 1; }
+  .stat-l { font-size: .65rem; color: var(--muted); margin-top: 5px; }
+  .stat-s { font-size: .65rem; color: var(--faint); margin-top: 2px; }
+
+  /* bars */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+  .sec-lbl { font-size: .67rem; font-family: var(--mono); color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin-bottom: .8rem; }
+  .bar-row { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+  .b-lbl { width: 38px; text-align: right; font-family: var(--mono); font-size: .72rem; color: var(--muted); flex-shrink: 0; }
+  .b-lbl.k { color: var(--kept-text); font-weight: 500; }
+  .b-track { flex: 1; height: 13px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .b-fill { height: 100%; border-radius: 3px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+  .b-n { width: 30px; font-family: var(--mono); font-size: .7rem; color: var(--muted); text-align: right; }
+
+  /* summary output */
+  .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 1.25rem; }
+  .sum-body { padding: 1.6rem 1.6rem 1.1rem; font-family: var(--sans); font-size: .95rem; font-weight: 300; line-height: 2; color: #c8c4be; letter-spacing: .01em; }
+  .sum-foot { padding: .55rem 1.1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .copy-btn { background: none; border: 1px solid var(--border2); color: var(--muted); font-family: var(--mono); font-size: .7rem; padding: 3px 10px; border-radius: 5px; cursor: pointer; transition: color .15s, border-color .15s; }
+  .copy-btn:hover { color: var(--text); border-color: var(--muted); }
+  .copy-btn.ok { color: var(--accent); border-color: var(--accent); }
+
+  /* token vis */
+  .tok-legend { display: flex; gap: 14px; margin-bottom: .65rem; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: .68rem; color: var(--muted); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
+  .token-cloud { display: flex; flex-wrap: wrap; gap: 3px; }
+  .tok { font-family: var(--mono); font-size: .7rem; padding: 2px 6px; border-radius: 3px; cursor: default; }
+  .tok-k { background: var(--kept-bg); color: var(--kept-text); }
+  .tok-d { background: var(--drop-bg); color: var(--drop-text); }
+
+  @media (max-width: 560px) {
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="logo">Summari<em>.</em></div>
+    <div class="tagline">Extractive text summarizer · Python + Flask backend</div>
+  </header>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-lbl">Input text</span>
+      <span class="char-count" id="charCount">0 chars</span>
+    </div>
+    <textarea id="inputText" placeholder="Paste your article, blog post, or any long text here..."></textarea>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Summary sentences</label>
+      <div class="slider-row">
+        <input type="range" id="nSlider" min="1" max="8" value="3" step="1"
+               oninput="document.getElementById('nVal').textContent=this.value">
+        <span class="sval" id="nVal">3</span>
+        <span class="sunit">sentences</span>
+      </div>
+    </div>
+    <button class="btn" id="submitBtn" onclick="runSummarize()">Summarize →</button>
+  </div>
+
+  <div class="loading" id="loading"><div class="spin"></div><span>Summarizing...</span></div>
+  <div class="err" id="errBox"></div>
+
+  <div class="results" id="results">
+
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-v" id="sOrig">—</div><div class="stat-l">original tokens</div></div>
+      <div class="stat"><div class="stat-v" id="sSum">—</div><div class="stat-l">summary tokens</div><div class="stat-s" id="sSumPct"></div></div>
+      <div class="stat"><div class="stat-v" id="sDrop">—</div><div class="stat-l">tokens removed</div><div class="stat-s" id="sDropPct"></div></div>
+      <div class="stat"><div class="stat-v" id="sRatio">—</div><div class="stat-l">compression ratio</div></div>
+    </div>
+
+    <div class="sum-card">
+      <div class="sum-body" id="sumText"></div>
+      <div class="sum-foot">
+        <span style="font-size:.68rem;font-family:var(--mono);color:var(--faint);" id="sumMeta"></span>
+        <button class="copy-btn" id="copyBtn" onclick="copySum()">copy</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<script>
+  const API = 'http://localhost:5000';
+
+  document.getElementById('inputText').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length + ' chars';
+  });
+
+  function setLoading(on) {
+    document.getElementById('loading').classList.toggle('on', on);
+    document.getElementById('submitBtn').disabled = on;
+    document.getElementById('errBox').classList.remove('on');
+  }
+  function showErr(msg) {
+    const b = document.getElementById('errBox');
+    b.textContent = msg; b.classList.add('on');
+    setLoading(false);
+  }
+
+  async function runSummarize() {
+    const text = document.getElementById('inputText').value.trim();
+    const n    = parseInt(document.getElementById('nSlider').value);
+    if (!text) return showErr('Please paste some text first.');
+    setLoading(true);
+    try {
+      const res = await fetch(API + '/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, n_sentences: n })
+      });
+      const data = await res.json();
+      if (!res.ok) return showErr(data.error || 'Server error ' + res.status);
+      setLoading(false);
+      render(data);
+    } catch(e) {
+      showErr('Cannot reach the Flask server. Is app.py running on port 5000?');
+    }
+  }
+
+  function tokenize(text) {
+    return text.match(/\b\w+(?:'\w+)?\b|[.,!?;:]/g) || [];
+  }
+
+  function render(data) {
+    const { summary, stats } = data;
+
+    document.getElementById('sOrig').textContent    = stats.original_tokens;
+    document.getElementById('sSum').textContent     = stats.summary_tokens;
+    document.getElementById('sSumPct').textContent  = stats.kept_pct + '% of original';
+    document.getElementById('sDrop').textContent    = stats.tokens_removed;
+    document.getElementById('sDropPct').textContent = stats.removed_pct + '% removed';
+    document.getElementById('sRatio').textContent   = stats.compression_ratio + 'x';
+
+    document.getElementById('sumText').textContent = summary;
+    document.getElementById('sumMeta').textContent =
+      stats.summary_tokens + ' tokens · ' + stats.compression_ratio + 'x compression';
+
+    document.getElementById('results').classList.add('on');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function copySum() {
+    navigator.clipboard.writeText(document.getElementById('sumText').textContent).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'copied!'; btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
